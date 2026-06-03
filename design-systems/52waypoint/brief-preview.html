@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>52Waypoint — Design Brief Preview</title>
+
+  <!-- Preload + connect to Google Fonts to ensure fonts arrive fast -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="preload"
+    as="style"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
+  />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
+  />
+
+  <style>
+    /* ── Tokens (mirrors src/app/globals.css) ───────────────────────────── */
+    :root {
+      /* Surfaces */
+      --void-black: #0A0A0A;
+      --deep-gray: #141414;
+      --surface-gray: #1E1E1E;
+      /* Text */
+      --signal-white: #F0F0F0;
+      --text-secondary: #CCCCCC;      /* body on dark */
+      --text-muted: #888888;           /* LIFTED from #555555 for AA on Void Black */
+      --muted-legacy: #555555;         /* only for ≥18pt */
+      /* Lines */
+      --border-gray: #333333;
+      --border-foreground-20: rgba(240,240,240,0.2);
+      /* Accent */
+      --accent: #E8783A;
+      --accent-20: rgba(232,120,58,0.2);
+      /* Light mode */
+      --warm-white: #FAF8F6;
+      --ink-black: #1A1A1A;
+      --soft-gray: #E0E0E0;
+
+      /* Type */
+      --font-display: "Bebas Neue", "Arial Narrow", "Impact", "DejaVu Sans Condensed", sans-serif;
+      --font-sans: "IBM Plex Sans", "DejaVu Sans", "Liberation Sans", Arial, sans-serif;
+      --font-mono: "IBM Plex Mono", "DejaVu Sans Mono", "Liberation Mono", "Courier New", monospace;
+
+      /* Layout */
+      --max-width: 1400px;
+      --pad-l-d: 7rem;       /* 112px — reserves left side for dot-nav, matches pl-28 */
+      --pad-r-d: 3rem;       /* 48px  — matches pr-12 */
+      --pad-x-m: 1.5rem;     /* 24px  — mobile pl-6/pr-6 */
+      --section-py-d: 8rem;  /* 128px — py-32 desktop */
+      --section-py-t: 6rem;  /* 96px  — tablet */
+      --section-py-m: 5rem;  /* 80px  — mobile */
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-gray) var(--void-black);
+    }
+    html::-webkit-scrollbar { width: 10px; }
+    html::-webkit-scrollbar-track { background: var(--void-black); }
+    html::-webkit-scrollbar-thumb {
+      background: var(--border-gray);
+      border-radius: 0;
+    }
+    html::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    body {
+      background: var(--void-black);
+      color: var(--signal-white);
+      font-family: var(--font-sans);
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      overflow-x: hidden;
+      position: relative;
+      min-height: 100vh;
+    }
+    ::selection { background: var(--accent); color: var(--void-black); }
+
+    /* Fixed canvas — grid + noise (from globals.css) */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.3;
+      background-image:
+        linear-gradient(to right,  rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* Container — matches the live site's asymmetric padding */
+    main { position: relative; z-index: 10; max-width: var(--max-width); margin: 0 auto; }
+    .container { padding-left: var(--pad-x-m); padding-right: var(--pad-x-m); }
+    @media (min-width: 1024px) {
+      .container { padding-left: var(--pad-l-d); padding-right: var(--pad-r-d); }
+    }
+
+    /* ── Top metadata strip ─────────────────────────────────────────────── */
+    .topbar {
+      border-bottom: 1px solid var(--border-gray);
+      padding: 14px var(--pad-x-m);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .topbar .left { color: var(--accent); }
+    .topbar .right { display: flex; gap: 1.5rem; }
+    @media (min-width: 1024px) {
+      .topbar { padding-left: var(--pad-l-d); padding-right: var(--pad-r-d); }
+    }
+
+    /* ── Header / Hero ──────────────────────────────────────────────────── */
+    header.hero {
+      padding-top: 6rem;
+      padding-bottom: 5rem;
+      border-bottom: 1px solid var(--border-gray);
+    }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 1.25rem;
+    }
+    .wordmark {
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 0.95;
+      font-size: clamp(3.5rem, 9vw, 6rem);
+      font-weight: 400;
+      margin: 0;
+    }
+    .wordmark .fifty-two { color: var(--accent); }
+    .wordmark .waypoint { color: var(--signal-white); }
+    .lede {
+      max-width: 560px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+      margin: 2rem 0 0;
+    }
+    .lede .accent { color: var(--accent); }
+
+    /* ── Section structure ──────────────────────────────────────────────── */
+    section.preview-section {
+      padding-top: var(--section-py-m);
+      padding-bottom: var(--section-py-m);
+      border-bottom: 1px solid var(--border-gray);
+    }
+    @media (min-width: 768px) {
+      section.preview-section { padding-top: var(--section-py-t); padding-bottom: var(--section-py-t); }
+    }
+    @media (min-width: 1024px) {
+      section.preview-section { padding-top: var(--section-py-d); padding-bottom: var(--section-py-d); }
+    }
+    .section-head { margin-bottom: 3rem; }
+    .section-head .num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 1rem;
+    }
+    .section-head h2 {
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      font-weight: 400;
+      font-size: clamp(2.25rem, 5vw, 4rem);
+      line-height: 1;
+      margin: 0 0 0.5rem;
+    }
+    .section-head .meta {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ── 1. Color swatches ──────────────────────────────────────────────── */
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1px;
+      background: var(--border-gray);
+      border: 1px solid var(--border-gray);
+    }
+    .swatch {
+      background: var(--deep-gray);
+      padding: 1.5rem;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .swatch .chip {
+      width: 100%;
+      height: 100px;
+      border: 1px solid var(--border-gray);
+    }
+    .swatch .role {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0;
+    }
+    .swatch .name {
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--signal-white);
+      margin: 0.5rem 0 0.5rem;
+      font-weight: 400;
+    }
+    .swatch .hex {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* ── 2. Typography specimens ────────────────────────────────────────── */
+    .specimen { padding: 2.5rem 0; border-top: 1px solid var(--border-gray); }
+    .specimen:first-child { border-top: 0; }
+    .specimen .row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .specimen .label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .specimen .stack {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .sample-display {
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      font-weight: 400;
+      font-size: clamp(2.25rem, 6vw, 4.5rem);
+      line-height: 0.95;
+      color: var(--signal-white);
+      margin: 0;
+    }
+    .sample-body {
+      font-family: var(--font-sans);
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+      max-width: 65ch;
+      margin: 0;
+    }
+    .sample-mono {
+      font-family: var(--font-mono);
+      font-weight: 400;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* ── 3. Spacing ruler ───────────────────────────────────────────────── */
+    .ruler { display: flex; flex-direction: column; gap: 1.5rem; }
+    .ruler .bar {
+      display: grid;
+      grid-template-columns: 180px 1fr 140px;
+      align-items: center;
+      gap: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+    .ruler .bar .name {
+      color: var(--signal-white);
+      font-weight: 500;
+    }
+    .ruler .bar .fill {
+      height: 16px;
+      background: var(--accent);
+      border: 1px solid var(--border-gray);
+    }
+    .ruler .bar .fill.muted { background: var(--surface-gray); }
+    .ruler .bar .val {
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    /* ── 4. Components ──────────────────────────────────────────────────── */
+    .components {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .component-frame {
+      background: var(--deep-gray);
+      border: 1px solid var(--border-gray);
+      padding: 2rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .component-frame .frame-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border-gray);
+      padding-bottom: 1rem;
+    }
+    .component-frame .note {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Ghost CTA — the canonical 52Waypoint button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color 200ms ease, color 200ms ease, background 200ms ease;
+      background: transparent;
+    }
+    .btn-ghost {
+      color: var(--signal-white);
+      border: 1px solid var(--border-foreground-20);
+    }
+    .btn-ghost:hover,
+    .btn-ghost.is-hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-ghost .chev {
+      display: inline-block;
+      transition: transform 400ms ease-in-out;
+    }
+    .btn-ghost:hover .chev { transform: rotate(45deg); }
+
+    .btn-text {
+      color: var(--text-muted);
+      padding: 0.75rem 0;
+      transition: color 200ms ease;
+    }
+    .btn-text:hover { color: var(--signal-white); }
+
+    /* Rare filled variant (only when truly needed) */
+    .btn-filled {
+      background: var(--accent);
+      color: var(--void-black);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+
+    .hover-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      padding-top: 0.5rem;
+    }
+    .hover-demo .label {
+      grid-column: span 2;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* Step card */
+    .step-card {
+      background: var(--surface-gray);
+      border: 1px solid var(--border-gray);
+      padding: 1.75rem;
+      position: relative;
+      min-height: 220px;
+    }
+    .step-card .step-num {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 32px;
+      font-weight: 500;
+      color: var(--signal-white);
+      opacity: 0.05;
+    }
+    .step-card .step-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0;
+    }
+    .step-card .step-title {
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      font-size: 1.75rem;
+      line-height: 1;
+      color: var(--signal-white);
+      margin: 0.75rem 0 1rem;
+      font-weight: 400;
+    }
+    .step-card .step-desc {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      margin: 0 0 1.25rem;
+    }
+    .step-card .step-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* Input */
+    .field { display: flex; flex-direction: column; gap: 0.75rem; }
+    .field label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .field input {
+      width: 100%;
+      background: transparent;
+      color: var(--signal-white);
+      border: 1px solid var(--border-foreground-20);
+      border-radius: 0;
+      padding: 0.85rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      outline: none;
+      transition: border-color 200ms ease;
+    }
+    .field input::placeholder { color: var(--text-muted); }
+    .field input:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-20);
+    }
+    .field .helper {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* Dot nav (fixed left) */
+    .dot-nav {
+      position: fixed;
+      top: 50%;
+      left: 1.5rem;
+      transform: translateY(-50%);
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 50;
+    }
+    @media (min-width: 1024px) { .dot-nav { display: flex; } }
+    .dot-nav .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--border-gray);
+    }
+    .dot-nav .dot.active { background: var(--accent); }
+
+    /* Motion section */
+    .motion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .motion-card {
+      background: var(--deep-gray);
+      border: 1px solid var(--border-gray);
+      padding: 1.5rem;
+    }
+    .motion-card h4 {
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      font-size: 1.4rem;
+      line-height: 1;
+      color: var(--signal-white);
+      margin: 0 0 0.75rem;
+      font-weight: 400;
+    }
+    .motion-card p {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      margin: 0 0 1rem;
+    }
+    .motion-card code {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--accent);
+      background: var(--void-black);
+      border: 1px solid var(--border-gray);
+      padding: 0.875rem 1rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Footer */
+    footer {
+      padding: 4rem 0 3rem;
+      display: grid;
+      grid-template-columns: 2fr repeat(3, 1fr);
+      gap: 2rem;
+    }
+    footer .col h4 {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 1rem;
+    }
+    footer .col p,
+    footer .col li,
+    footer .col a {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 0 0 0.5rem;
+      text-decoration: none;
+    }
+    footer .col a:hover { color: var(--accent); }
+    footer ul { list-style: none; padding: 0; margin: 0; }
+    footer .brand-mark {
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      font-size: 2rem;
+      line-height: 1;
+      margin: 0 0 0.75rem;
+      font-weight: 400;
+    }
+    footer .brand-mark .fifty-two { color: var(--accent); }
+
+    @media (max-width: 880px) {
+      footer { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <nav class="dot-nav" aria-label="Section navigation">
+    <span class="dot active"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  </nav>
+
+  <div class="topbar">
+    <span class="left">VOL.01 · ISSUE 01 — DESIGN BRIEF</span>
+    <div class="right">
+      <span>52WAYPOINT.COM</span>
+      <span>MMXXVI</span>
+    </div>
+  </div>
+
+  <main>
+    <div class="container">
+      <header class="hero">
+        <p class="eyebrow">Brand · Design System · Preview</p>
+        <h1 class="wordmark">
+          <span class="fifty-two">52</span><span class="waypoint">WAYPOINT</span>
+        </h1>
+        <p class="lede">
+          52 steps to build and launch your idea. Free startup incubator
+          for founders who want to build without funding. <span class="accent">This community is your capital.</span>
+        </p>
+        <div class="btn-row" style="margin-top:2.5rem">
+          <a class="btn btn-ghost" href="#palette">
+            <span>Start Step 1</span>
+            <span class="chev">→</span>
+          </a>
+          <a class="btn btn-text" href="#components">Learn more</a>
+        </div>
+      </header>
+
+      <!-- ── 1. SWATCHES ─────────────────────────────────────────────── -->
+      <section class="preview-section" id="palette">
+        <div class="section-head">
+          <span class="num">01 / Palette</span>
+          <h2>Color &amp; Roles</h2>
+          <span class="meta">9 tokens · 60% black / 30% gray / 10% orange</span>
+        </div>
+
+        <div class="swatches">
+          <div class="swatch">
+            <div class="chip" style="background:#0A0A0A; border-color:#1f1f1f"></div>
+            <div>
+              <p class="role">Background</p>
+              <p class="name">Void Black</p>
+              <p class="hex">#0A0A0A</p>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#141414"></div>
+            <div>
+              <p class="role">Surface</p>
+              <p class="name">Deep Gray</p>
+              <p class="hex">#141414</p>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#1E1E1E"></div>
+            <div>
+              <p class="role">Surface Alt</p>
+              <p class="name">Surface Gray</p>
+              <p class="hex">#1E1E1E</p>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#F0F0F0"></div>
+            <div>
+              <p class="role">Text Primary</p>
+              <p class="name">Signal White</p>
+              <p class="hex">#F0F0F0</p>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#CCCCCC"></div>
+            <div>
+              <p class="role">Text Secondary</p>
+              <p class="name">Light Mute</p>
+              <p class="hex">#CCCCCC</p>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#888888"></div>
+            <div>
+              <p class="role">Muted (AA Safe)</p>
+              <p class="name">Soft Gray</p>
+              <p class="hex">#888888</p>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#333333"></div>
+            <div>
+              <p class="role">Border</p>
+              <p class="name">Border Gray</p>
+              <p class="hex">#333333</p>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#E8783A"></div>
+            <div>
+              <p class="role">Accent</p>
+              <p class="name">Waypoint Orange</p>
+              <p class="hex">#E8783A</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 2. TYPOGRAPHY ───────────────────────────────────────────── -->
+      <section class="preview-section" id="typography">
+        <div class="section-head">
+          <span class="num">02 / Typography</span>
+          <h2>Three Faces</h2>
+          <span class="meta">Display · Body · Mono</span>
+        </div>
+
+        <div class="specimen">
+          <div class="row">
+            <span class="label">Display — Bebas Neue</span>
+            <span class="stack">400 · uppercase · −0.01em</span>
+          </div>
+          <p class="sample-display">The quick brown fox jumps over the lazy dog.</p>
+        </div>
+
+        <div class="specimen">
+          <div class="row">
+            <span class="label">Body — IBM Plex Sans</span>
+            <span class="stack">400 · 16px / 1.65</span>
+          </div>
+          <p class="sample-body">
+            The quick brown fox jumps over the lazy dog. 52 focused actions
+            to turn your idea into a business. Self-paced. Zero investment.
+            Build, ship, validate, launch — every step produces a tangible
+            output, never theory.
+          </p>
+        </div>
+
+        <div class="specimen">
+          <div class="row">
+            <span class="label">Mono — IBM Plex Mono</span>
+            <span class="stack">400 · 13px · +0.05em</span>
+          </div>
+          <p class="sample-mono">
+            STEP 01 / 52 · IDEATION · 00:12:32 · FILED UNDER PROBLEM · MMXXVI
+          </p>
+        </div>
+      </section>
+
+      <!-- ── 3. SPACING RULER ────────────────────────────────────────── -->
+      <section class="preview-section" id="spacing">
+        <div class="section-head">
+          <span class="num">03 / Spacing</span>
+          <h2>Rhythm</h2>
+          <span class="meta">8px baseline · max-width 1400px · radius 0px</span>
+        </div>
+
+        <div class="ruler">
+          <div class="bar">
+            <span class="name">Section · desktop</span>
+            <span class="fill" style="width:100%"></span>
+            <span class="val">128px / py-32</span>
+          </div>
+          <div class="bar">
+            <span class="name">Section · tablet</span>
+            <span class="fill" style="width:75%"></span>
+            <span class="val">96px / py-24</span>
+          </div>
+          <div class="bar">
+            <span class="name">Section · mobile</span>
+            <span class="fill" style="width:62.5%"></span>
+            <span class="val">80px / py-20</span>
+          </div>
+          <div class="bar">
+            <span class="name">Left pad · desktop</span>
+            <span class="fill muted" style="width:87.5%"></span>
+            <span class="val">112px / pl-28</span>
+          </div>
+          <div class="bar">
+            <span class="name">Right pad · desktop</span>
+            <span class="fill muted" style="width:37.5%"></span>
+            <span class="val">48px / pr-12</span>
+          </div>
+          <div class="bar">
+            <span class="name">Card padding</span>
+            <span class="fill muted" style="width:21.875%"></span>
+            <span class="val">28px / 1.75rem</span>
+          </div>
+          <div class="bar">
+            <span class="name">Grid cell</span>
+            <span class="fill muted" style="width:46.875%"></span>
+            <span class="val">60px</span>
+          </div>
+          <div class="bar">
+            <span class="name">Border radius</span>
+            <span class="fill muted" style="width:0%; border:1px dashed var(--border-gray); height:18px"></span>
+            <span class="val">0px (no curves)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 4. COMPONENTS ───────────────────────────────────────────── -->
+      <section class="preview-section" id="components">
+        <div class="section-head">
+          <span class="num">04 / Components</span>
+          <h2>Ghost First</h2>
+          <span class="meta">Buttons · Card · Input · Dot nav</span>
+        </div>
+
+        <div class="components">
+          <!-- Buttons -->
+          <div class="component-frame">
+            <span class="frame-label">Buttons — canonical ghost</span>
+
+            <div class="hover-demo">
+              <span class="label">Default state</span>
+              <span class="label" style="text-align:right">On hover</span>
+              <a class="btn btn-ghost" href="#">
+                <span>Start Step 1</span><span class="chev">→</span>
+              </a>
+              <a class="btn btn-ghost is-hover" href="#" aria-disabled="true">
+                <span>Start Step 1</span><span class="chev" style="transform:rotate(45deg)">→</span>
+              </a>
+            </div>
+
+            <div class="btn-row" style="border-top:1px solid var(--border-gray); padding-top:1.25rem;">
+              <a class="btn btn-text" href="#">Learn more</a>
+              <a class="btn btn-text" href="#" style="color:var(--accent)">Learn more <span style="opacity:0.7">(hover)</span></a>
+            </div>
+
+            <div class="btn-row" style="border-top:1px solid var(--border-gray); padding-top:1.25rem;">
+              <a class="btn btn-filled" href="#">Filled (rare)</a>
+              <p class="note" style="margin:0;">Reserved for the single strongest action when ghost isn't enough.</p>
+            </div>
+
+            <p class="note">
+              Border <code style="font-family:var(--font-mono); color:var(--accent)">foreground/20</code> · text <code style="font-family:var(--font-mono); color:var(--accent)">#F0F0F0</code> · transitions 200ms to accent border + text.
+            </p>
+          </div>
+
+          <!-- Step card -->
+          <div class="component-frame">
+            <span class="frame-label">Step Card</span>
+            <div class="step-card">
+              <span class="step-num">01</span>
+              <p class="step-label">01 / Ideation</p>
+              <h3 class="step-title">Find a problem worth solving</h3>
+              <p class="step-desc">
+                Talk to five people. List their three biggest pains. Pick the
+                one that comes up loudest. That's it. That's the step.
+              </p>
+              <p class="step-meta">Est. 2h · Deliverable: shortlist</p>
+            </div>
+          </div>
+
+          <!-- Input -->
+          <div class="component-frame">
+            <span class="frame-label">Email capture</span>
+            <div class="field">
+              <label for="demo-email">Email address</label>
+              <input id="demo-email" type="email" placeholder="founder@yourcompany.com" />
+              <span class="helper">We send one signal per week. Unsubscribe anytime.</span>
+            </div>
+            <a class="btn btn-ghost" href="#" style="align-self:flex-start;">
+              <span>Subscribe</span><span class="chev">→</span>
+            </a>
+          </div>
+
+          <!-- Dot nav demo -->
+          <div class="component-frame">
+            <span class="frame-label">Dot navigation</span>
+            <div style="display:flex; gap:16px; align-items:center; padding:1.25rem 0;">
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;"></span>
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--border-gray); display:inline-block;"></span>
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--border-gray); display:inline-block;"></span>
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--border-gray); display:inline-block;"></span>
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--border-gray); display:inline-block;"></span>
+            </div>
+            <p class="note">Inactive #333333 · Active #E8783A · 5–6px circle · vertical, left viewport edge ≥ 1024px.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 5. MOTION ───────────────────────────────────────────────── -->
+      <section class="preview-section" id="motion">
+        <div class="section-head">
+          <span class="num">05 / Motion</span>
+          <h2>Minimal &amp; Elegant</h2>
+          <span class="meta">GSAP · ScrollTrigger · Lenis</span>
+        </div>
+
+        <div class="motion-grid">
+          <div class="motion-card">
+            <h4>Slide-in from side</h4>
+            <p>Headers and section blocks reveal on scroll, drift in from the left or right, fade up to 1.</p>
+<code>gsap.from(el, {
+  x: -60, opacity: 0,
+  duration: 1, ease: "power3.out",
+  scrollTrigger: { trigger: el, start: "top 85%",
+    toggleActions: "play none none reverse" },
+});</code>
+          </div>
+
+          <div class="motion-card">
+            <h4>Alternating L/R</h4>
+            <p>Principle rows alternate alignment; each animates in from its aligned side at x: ±80, opacity 0 → 1.</p>
+<code>gsap.from(article, {
+  x: isRight ? 80 : -80,
+  opacity: 0, duration: 1,
+  ease: "power3.out",
+});</code>
+          </div>
+
+          <div class="motion-card">
+            <h4>Scroll-tied parallax</h4>
+            <p>Hero content lifts and fades as the user scrolls past it. Scrub-tied — moves with the scrollbar, never on its own.</p>
+<code>gsap.to(contentRef.current, {
+  y: -100, opacity: 0,
+  scrollTrigger: { trigger: section,
+    start: "top top", end: "bottom top", scrub: 1 },
+});</code>
+          </div>
+
+          <div class="motion-card">
+            <h4>Hover micro-interactions</h4>
+            <p>200ms Tailwind transitions. Border + text shift to accent. Optional chevron rotates 45° in 400ms.</p>
+<code>transition-all duration-200
+hover:border-accent
+hover:text-accent
+group-hover:rotate-45</code>
+          </div>
+
+          <div class="motion-card">
+            <h4>Text effects</h4>
+            <p>Scramble on hover (0.6s), split-flap reveal (mechanical), parallax highlight inside Bebas headlines.</p>
+<code>&lt;ScrambleTextOnHover duration={0.6}/&gt;
+&lt;SplitFlapText speed={80}/&gt;
+&lt;HighlightText parallaxSpeed={0.6}/&gt;</code>
+          </div>
+
+          <div class="motion-card">
+            <h4>Ambient layers</h4>
+            <p>Lenis smooths page scroll. Noise + grid stay still — they are texture, not motion.</p>
+<code>&lt;SmoothScrollAttach /&gt;  // lenis
+.noise-overlay { opacity: 0.03; }
+.grid-bg       { 60px cells }</code>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Footer colophon ─────────────────────────────────────────── -->
+      <footer>
+        <div class="col">
+          <p class="brand-mark"><span class="fifty-two">52</span>WAYPOINT</p>
+          <p>This community is your capital.</p>
+          <p>© MMXXVI · 52Waypoint</p>
+        </div>
+        <div class="col">
+          <h4>Build</h4>
+          <ul>
+            <li><a href="#">Waypoints</a></li>
+            <li><a href="#">Logbooks</a></li>
+            <li><a href="#">Checkpoints</a></li>
+          </ul>
+        </div>
+        <div class="col">
+          <h4>Community</h4>
+          <ul>
+            <li><a href="#">Signals</a></li>
+            <li><a href="#">Events</a></li>
+            <li><a href="#">Mentorship</a></li>
+          </ul>
+        </div>
+        <div class="col">
+          <h4>Colophon</h4>
+          <ul>
+            <li>Brand v1.0</li>
+            <li>Bebas Neue · IBM Plex</li>
+            <li>0px radius · 60/30/10</li>
+            <li><a href="https://52waypoint.com">52waypoint.com ↗</a></li>
+          </ul>
+        </div>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>
