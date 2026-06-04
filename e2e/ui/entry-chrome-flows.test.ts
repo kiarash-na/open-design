@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { ensureRailOpen } from '@/playwright/rail';
 import type { Page, Request } from '@playwright/test';
-import { applyStandardMocks, STORAGE_KEY } from '@/playwright/mock-factory';
+import { applyStandardMocks, fulfillAgentsRoute, STORAGE_KEY } from '@/playwright/mock-factory';
 const LOCAL_CLI_LABEL = /Local CLI|本机 CLI|本地 CLI/i;
 const STARTER_PLUGIN = makeStarterPlugin({
   id: 'localized-plugin',
@@ -78,12 +79,16 @@ test('[P0] entry chrome exposes the primary home creation surface and settings e
   await gotoEntryHome(page);
   await expect(page.getByTestId('entry-star-badge')).toBeVisible();
   await expect(page.getByTestId('entry-use-everywhere-button')).toBeVisible();
-  await expect(page.getByTestId('entry-nav-logo')).toBeVisible();
   await expect(page.getByTestId('recent-projects-strip')).toHaveCount(0);
+  // The nav rail is collapsed by default — only the topbar toggle shows.
+  // Expand it to assert the rail and its logo are reachable.
+  await expect(page.getByTestId('entry-rail-toggle')).toBeVisible();
+  await page.getByTestId('entry-rail-toggle').click();
   await expect(page.locator('.entry-nav-rail')).toBeVisible();
+  await expect(page.getByTestId('entry-nav-logo')).toBeVisible();
   await expect(page.locator('.entry-brand')).toHaveCount(0);
   await expect(page.getByTestId('home-hero-input')).toBeVisible();
-  await expect(page.getByTestId('home-hero-attach')).toBeVisible();
+  await expect(page.getByTestId('home-hero-plus-trigger')).toBeVisible();
   await expect(page.getByTestId('home-hero-submit')).toBeDisabled();
   const createTabs = page.getByTestId('home-hero-type-tabs');
   await expect(createTabs).toBeVisible();
@@ -100,7 +105,8 @@ test('[P0] entry chrome exposes the primary home creation surface and settings e
   // entry layout.
   await expect(page.locator('.pet-rail')).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Open settings' }).click();
+  await page.getByTestId('entry-settings-menu-trigger').click();
+  await page.getByTestId('entry-settings-open-details').click();
   const settingsDialog = page.getByRole('dialog');
   await expect(settingsDialog).toBeVisible();
   await expect(settingsDialog.getByRole('heading', { name: 'Execution mode' })).toBeVisible();
@@ -110,6 +116,7 @@ test('[P0] entry chrome exposes the primary home creation surface and settings e
 
 test('[P1] entry top navigation matches the current home tab structure', async ({ page }) => {
   await gotoEntryHome(page);
+  await ensureRailOpen(page);
 
   await expect(page.getByTestId('entry-nav-logo')).toBeVisible();
   await expect(page.getByTestId('entry-nav-home')).toHaveAttribute('aria-current', 'page');
@@ -146,6 +153,7 @@ test('[P1] home view exposes the redesigned hero, recent projects, and starters'
   await expect(page.getByTestId('home-hero')).toBeVisible();
   await expect(page.getByTestId('entry-nav-home')).toHaveAttribute('aria-current', 'page');
 
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-projects').click();
   await expect(page).toHaveURL(/\/projects$/);
   await expect(page.getByTestId('entry-nav-projects')).toHaveAttribute('aria-current', 'page');
@@ -196,6 +204,7 @@ test('[P1] design systems page is reachable from entry nav and supports search, 
   });
 
   await gotoEntryHome(page);
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-design-systems').click();
 
   await expect(page).toHaveURL(/\/design-systems$/);
@@ -278,53 +287,49 @@ test('[P0] entry execution pill opens the Local CLI and BYOK switcher from Home'
       }),
     );
   }, STORAGE_KEY);
-  await page.route('**/api/agents', async (route) => {
-    await route.fulfill({
-      json: {
-        agents: [
-          {
-            id: 'claude',
-            name: 'Claude Code',
-            bin: 'claude',
-            available: true,
-            version: '1.0.0',
-            models: [{ id: 'default', label: 'Default' }],
-          },
-          {
-            id: 'codex',
-            name: 'Codex CLI',
-            bin: 'codex',
-            available: true,
-            version: '0.80.0',
-            models: [{ id: 'default', label: 'Default' }],
-          },
-          {
-            id: 'opencode',
-            name: 'OpenCode',
-            bin: 'opencode',
-            available: true,
-            version: '0.5.0',
-            models: [{ id: 'default', label: 'Default' }],
-          },
-          {
-            id: 'hermes',
-            name: 'Hermes',
-            bin: 'hermes',
-            available: true,
-            version: '0.5.0',
-            models: [{ id: 'default', label: 'Default' }],
-          },
-          {
-            id: 'cursor-agent',
-            name: 'Cursor Agent',
-            bin: 'cursor-agent',
-            available: true,
-            version: '0.5.0',
-            models: [{ id: 'default', label: 'Default' }],
-          },
-        ],
+  await page.route('**/api/agents**', async (route) => {
+    await fulfillAgentsRoute(route, [
+      {
+        id: 'claude',
+        name: 'Claude Code',
+        bin: 'claude',
+        available: true,
+        version: '1.0.0',
+        models: [{ id: 'default', label: 'Default' }],
       },
-    });
+      {
+        id: 'codex',
+        name: 'Codex CLI',
+        bin: 'codex',
+        available: true,
+        version: '0.80.0',
+        models: [{ id: 'default', label: 'Default' }],
+      },
+      {
+        id: 'opencode',
+        name: 'OpenCode',
+        bin: 'opencode',
+        available: true,
+        version: '0.5.0',
+        models: [{ id: 'default', label: 'Default' }],
+      },
+      {
+        id: 'hermes',
+        name: 'Hermes',
+        bin: 'hermes',
+        available: true,
+        version: '0.5.0',
+        models: [{ id: 'default', label: 'Default' }],
+      },
+      {
+        id: 'cursor-agent',
+        name: 'Cursor Agent',
+        bin: 'cursor-agent',
+        available: true,
+        version: '0.5.0',
+        models: [{ id: 'default', label: 'Default' }],
+      },
+    ]);
   });
   await page.route('**/api/app-config', async (route) => {
     if (route.request().method() !== 'GET') {
@@ -374,6 +379,8 @@ test('[P0] entry execution pill opens the Local CLI and BYOK switcher from Home'
 test('[P2] entry help menu exposes community links and topbar routes Use everywhere', async ({ page }) => {
   await gotoEntryHome(page);
 
+  // The help launcher lives in the (collapsed-by-default) rail footer.
+  await ensureRailOpen(page);
   await page.getByTestId('entry-help-trigger').click();
   const menu = page.locator('.entry-help-popover[role="menu"]');
   await expect(menu).toBeVisible();
@@ -393,7 +400,10 @@ test('[P2] entry help menu exposes community links and topbar routes Use everywh
     'true',
   );
 
-  await page.getByTestId('entry-nav-logo').click();
+  await ensureRailOpen(page);
+  // Return home via the explicit Home nav (the logo is overlaid by the
+  // collapse button on hover, which would intercept the click).
+  await page.getByTestId('entry-nav-home').click();
   await expect(page.getByTestId('home-hero')).toBeVisible();
   await page.getByTestId('entry-help-trigger').click();
   await expect(menu).toBeVisible();
@@ -406,14 +416,16 @@ test('[P2] home topbar overlays close on outside click, Escape, and Settings ope
 
   const pill = page.getByTestId('inline-model-switcher-chip');
   const executionPopover = page.getByTestId('inline-model-switcher-popover');
-  const settingsButton = page.getByRole('button', { name: 'Open settings' });
 
   await pill.click();
   await expect(executionPopover).toBeVisible();
 
-  await settingsButton.click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  // The settings entry is a menu; opening it dismisses the execution popover,
+  // and its "Settings" item opens the full dialog.
+  await page.getByTestId('entry-settings-menu-trigger').click();
   await expect(executionPopover).toHaveCount(0);
+  await page.getByTestId('entry-settings-open-details').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
@@ -442,6 +454,7 @@ test('[P1] entry execution pill remains available across secondary entry pages',
   ];
 
   for (const destination of destinations) {
+    await ensureRailOpen(page);
     await page.getByTestId(destination.nav).click();
     await expect(
       page.locator('h1').filter({ hasText: destination.heading }).first(),
@@ -477,14 +490,17 @@ test('[P1] home starters can browse registry and use a starter query from Home',
   await expect(page.getByTestId('plugins-create-button')).toBeVisible();
   await expect(page.getByTestId('plugins-import-button')).toBeVisible();
 
-  await page.getByTestId('entry-nav-logo').click();
+  await ensureRailOpen(page);
+  // Return home via the explicit Home nav (the logo is overlaid by the
+  // collapse button on hover, which would intercept the click).
+  await page.getByTestId('entry-nav-home').click();
   await expect(page.getByTestId('home-hero')).toBeVisible();
   await expect(page.getByTestId('plugins-home-use-menu-localized-plugin')).toBeVisible();
   await page.getByTestId('plugins-home-use-menu-localized-plugin').click({ force: true });
   await page.getByTestId('plugins-home-use-with-query-localized-plugin').click();
 
   const input = page.getByTestId('home-hero-input');
-  await expect(input).toHaveValue('Make a design systems brief.');
+  await expect(input).toHaveText('Make a design systems brief.');
 });
 
 test('[P2] home starters shows the empty catalog state when no plugins are available', async ({ page }) => {
@@ -563,7 +579,7 @@ test('[P1] home starters can jump into plugin creation through the registry brow
   await expect(page.locator('h1').filter({ hasText: 'Plugins' })).toBeVisible();
   await page.getByTestId('plugins-create-button').click();
 
-  await expect(page.getByTestId('home-hero-input')).toHaveValue(/Create an Open Design plugin/i);
+  await expect(page.getByTestId('home-hero-input')).toHaveText(/Create an Open Design plugin/i);
 });
 
 test('[P2] home starters search can enter a no-results state and recover with clear', async ({ page }) => {
@@ -786,8 +802,9 @@ test('[P1] home starters Use plugin from the details modal applies the plugin to
   await expect(dialog).toBeVisible();
   await page.getByTestId('plugin-details-use-detail-use-plugin').click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByTestId('home-hero-context-plugin-detail-use-plugin')).toBeVisible();
-  await expect(page.getByTestId('home-hero-input')).toHaveValue('');
+  // Plugin context no longer renders a visible badge row; the plain "Use"
+  // action attaches the plugin as context without injecting prompt text.
+  await expect(page.getByTestId('home-hero-input')).toHaveText('');
 });
 
 test('[P0] home starters direct Use keeps prompt empty and still allows a freeform submit', async ({ page }) => {
@@ -802,11 +819,11 @@ test('[P0] home starters direct Use keeps prompt empty and still allows a freefo
   await gotoEntryHome(page);
 
   const input = page.getByTestId('home-hero-input');
-  await expect(input).toHaveValue('');
+  await expect(input).toHaveText('');
 
   await page.locator('article.plugins-home__card[data-plugin-id="localized-plugin"]').hover();
   await page.getByTestId('plugins-home-use-localized-plugin').click({ force: true });
-  await expect(input).toHaveValue('');
+  await expect(input).toHaveText('');
 
   await input.fill('Use the selected starter as context');
   const projectRequestPromise = page.waitForRequest(isCreateProjectRequest);
@@ -839,15 +856,14 @@ test('[P1] home starters Use with query hydrates the prompt and keeps plugin con
   await gotoEntryHome(page);
 
   const input = page.getByTestId('home-hero-input');
-  await expect(input).toHaveValue('');
+  await expect(input).toHaveText('');
   const starterCard = page.locator('[data-plugin-id="localized-plugin"]').first();
   await starterCard.scrollIntoViewIfNeeded();
   await starterCard.hover();
   await expect(page.getByTestId('plugins-home-use-menu-localized-plugin')).toBeVisible();
   await page.getByTestId('plugins-home-use-menu-localized-plugin').click();
   await page.getByTestId('plugins-home-use-with-query-localized-plugin').click();
-  await expect(page.getByTestId('home-hero-context-plugin-localized-plugin')).toBeVisible();
-  await expect(input).toHaveValue('Make a design systems brief.');
+  await expect(input).toHaveText('Make a design systems brief.');
 });
 
 test('[P0] home starters Use with query carries the hydrated starter prompt into the created project and first user turn', async ({ page }) => {
@@ -868,8 +884,7 @@ test('[P0] home starters Use with query carries the hydrated starter prompt into
   await expect(page.getByTestId('plugins-home-use-menu-localized-plugin')).toBeVisible();
   await page.getByTestId('plugins-home-use-menu-localized-plugin').click();
   await page.getByTestId('plugins-home-use-with-query-localized-plugin').click();
-  await expect(page.getByTestId('home-hero-context-plugin-localized-plugin')).toBeVisible();
-  await expect(input).toHaveValue('Make a design systems brief.');
+  await expect(input).toHaveText('Make a design systems brief.');
 
   const projectRequestPromise = page.waitForRequest(isCreateProjectRequest);
   const runRequestPromise = page.waitForRequest(isCreateRunRequest);
@@ -913,7 +928,12 @@ test('[P0] home hero input keeps Shift+Enter as a newline and submits on Enter',
   await input.fill('Line one');
   await input.press('Shift+Enter');
   await input.type('Line two');
-  await expect(input).toHaveValue('Line one\nLine two');
+  // Lexical renders the soft break as separate block nodes, so the editor's
+  // textContent collapses the newline; assert both lines are present rather
+  // than an exact "\n"-joined value. The newline itself is verified below
+  // against the create-project/run payloads.
+  await expect(input).toContainText('Line one');
+  await expect(input).toContainText('Line two');
   await expect(page).toHaveURL(/\/$/);
   await expect(submit).toBeEnabled();
 
@@ -953,7 +973,7 @@ test('[P1] home hero @ mention picker opens and Enter applies the highlighted pl
   await input.press('Enter');
 
   await expect(picker).toHaveCount(0);
-  await expect(input).toHaveValue('@Localized Plugin');
+  await expect(input).toHaveText('@Localized Plugin');
 });
 
 test('[P0] home hero attachment input stages files, enables submit, and supports removal', async ({ page }) => {
@@ -1003,6 +1023,85 @@ test('[P0] home hero attachment-only submit uploads the file and sends it with t
 
   await expect(page).toHaveURL(/\/projects\//);
   await expect(page.locator('.user-attachments').getByText('reference.txt', { exact: true })).toBeVisible();
+});
+
+test('[P1] collapsed rail stays out of the keyboard tab order on the home view', async ({ page }) => {
+  await gotoEntryHome(page);
+
+  // Collapsed by default: the rail must be inert so its still-mounted logo and
+  // nav buttons cannot receive keyboard focus before the visible toggle/hero.
+  const rail = page.locator('.entry-nav-rail');
+  await expect(rail).toHaveAttribute('inert', '');
+
+  // Tabbing from the top of the document must never land inside the rail.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Tab');
+    const inRail = await page.evaluate(
+      () => !!document.activeElement?.closest('.entry-nav-rail'),
+    );
+    expect(inRail).toBe(false);
+  }
+
+  // Once expanded the rail becomes interactive again and drops inert.
+  await ensureRailOpen(page);
+  await expect(rail).not.toHaveAttribute('inert', '');
+  await expect(page.getByTestId('entry-nav-new-project')).toBeVisible();
+});
+
+test('[P1] collapsed new-user templates gallery stays out of the keyboard tab order', async ({ page }) => {
+  // Force the no-project (new-user) state so the templates gallery starts
+  // collapsed behind the scroll-up hint.
+  await page.route('**/api/projects', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({ json: { projects: [] } });
+      return;
+    }
+    await route.continue();
+  });
+  await gotoEntryHome(page);
+
+  const body = page.locator('.home-templates-reveal__body');
+  await expect(body).toHaveAttribute('inert', '');
+
+  // Tabbing from the top of the document must never land inside the still-
+  // mounted (but hidden) Community-template controls.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press('Tab');
+    const inBody = await page.evaluate(
+      () => !!document.activeElement?.closest('.home-templates-reveal__body'),
+    );
+    expect(inBody).toBe(false);
+  }
+
+  // Revealing the gallery (click the hint) drops inert and exposes the grid.
+  await page.getByTestId('home-templates-hint').click();
+  await expect(body).not.toHaveAttribute('inert', '');
+});
+
+test('[P1] rail can be collapsed again on coarse-pointer / non-hover devices', async ({ page }) => {
+  // Emulate a touch device where `(hover: none)` matches: the collapse button
+  // can't be revealed by hover and the topbar toggle is display:none once the
+  // rail docks, so the rail must stay foldable through the always-visible
+  // collapse control. emulateMedia() doesn't cover `hover`, so use CDP.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setEmulatedMedia', {
+    features: [
+      { name: 'hover', value: 'none' },
+      { name: 'pointer', value: 'coarse' },
+    ],
+  });
+
+  await gotoEntryHome(page);
+  await ensureRailOpen(page);
+
+  // Without a hover, the collapse control must still be visible and tappable,
+  // and tapping it must actually fold the rail back.
+  const collapse = page.getByTestId('entry-nav-collapse');
+  await expect(collapse).toBeVisible();
+  await collapse.click();
+  await expect(page.locator('.entry')).not.toHaveClass(/entry--rail-open/);
 });
 
 async function gotoEntryHome(page: Page) {

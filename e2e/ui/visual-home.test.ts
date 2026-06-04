@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ensureRailOpen } from '@/playwright/rail';
 import {
   captureVisual,
   configureVisualPage,
@@ -78,6 +79,7 @@ test('[P2] captures the new project modal surface', async ({ page }) => {
   await configureVisualPage(page);
   await gotoVisualHome(page);
 
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-new-project').click();
   await expect(page.getByTestId('new-project-modal')).toBeVisible();
   await expect(page.getByTestId('new-project-panel')).toBeVisible();
@@ -90,6 +92,7 @@ test('[P2] captures the projects page surface', async ({ page }) => {
   await configureVisualPage(page);
   await gotoVisualHome(page);
 
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-projects').click();
   await expect(page).toHaveURL(/\/projects$/);
   const projects = page.getByTestId('entry-view-projects');
@@ -104,6 +107,7 @@ test('[P2] captures the projects kanban surface', async ({ page }) => {
   await configureVisualPage(page);
   await gotoVisualHome(page);
 
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-projects').click();
   const projects = page.getByTestId('entry-view-projects');
   await projects.getByTestId('designs-view-kanban').click();
@@ -118,6 +122,7 @@ test('[P2] captures the design systems page surface', async ({ page }) => {
   await configureVisualPage(page);
   await gotoVisualHome(page);
 
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-design-systems').click();
   await expect(page).toHaveURL(/\/design-systems$/);
   await expect(page.getByTestId('design-systems-tab')).toBeVisible();
@@ -133,6 +138,7 @@ test('[P2] captures the plugins page surface', async ({ page }) => {
   await configureVisualPage(page);
   await gotoVisualHome(page);
 
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-plugins').click();
   await expect(page).toHaveURL(/\/plugins$/);
   const plugins = page.getByTestId('entry-view-plugins');
@@ -148,6 +154,7 @@ test('[P2] captures the integrations page surface', async ({ page }) => {
   await configureVisualPage(page);
   await gotoVisualHome(page);
 
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-integrations').click();
   await expect(page).toHaveURL(/\/integrations$/);
   await expect(page.getByRole('heading', { name: 'Integrations' })).toBeVisible();
@@ -161,6 +168,7 @@ test('[P2] captures the integrations use everywhere surface', async ({ page }) =
   await configureVisualPage(page);
   await gotoVisualHome(page);
 
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-integrations').click();
   await page.getByTestId('integrations-tab-use-everywhere').click();
   await expect(page.getByTestId('integrations-tab-use-everywhere')).toHaveAttribute('aria-selected', 'true');
@@ -174,6 +182,7 @@ test('[P2] captures the tasks page surface', async ({ page }) => {
   await configureVisualPage(page);
   await gotoVisualHome(page);
 
+  await ensureRailOpen(page);
   await page.getByTestId('entry-nav-tasks').click();
   await expect(page).toHaveURL(/\/automations$/);
   await expect(page.getByTestId('tasks-view')).toBeVisible();
@@ -212,10 +221,7 @@ test('[P2] captures the settings execution surface', async ({ page }) => {
   await gotoVisualHome(page);
   await gotoVisualWorkspace(page);
 
-  // Settings now opens from the header gear, not the avatar menu dropdown.
-  await page.locator('.settings-icon-btn').click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
+  const dialog = await openSettingsDetailsFromHeader(page);
   await expect(dialog.getByRole('tab', { name: /Local CLI/i })).toBeVisible();
   await expect(dialog.getByRole('tablist', { name: 'Execution mode' })).toBeVisible();
   await waitForVisualFonts(page);
@@ -228,10 +234,7 @@ test('[P2] captures the settings BYOK surface', async ({ page }) => {
   await gotoVisualHome(page);
   await gotoVisualWorkspace(page);
 
-  // Settings now opens from the header gear, not the avatar menu dropdown.
-  await page.locator('.settings-icon-btn').click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
+  const dialog = await openSettingsDetailsFromHeader(page);
   await dialog.getByRole('tab', { name: 'BYOK' }).click();
   await expect(dialog.getByRole('tablist', { name: 'API protocol' })).toBeVisible();
   await expect(dialog.getByRole('heading', { name: 'Anthropic API' })).toBeVisible();
@@ -245,6 +248,15 @@ async function openAvatarMenu(page: Parameters<typeof configureVisualPage>[0]) {
   const menu = page.locator('.avatar-popover[role="dialog"]');
   await expect(menu).toBeVisible();
   return menu;
+}
+
+async function openSettingsDetailsFromHeader(page: Parameters<typeof configureVisualPage>[0]) {
+  await page.locator('.settings-icon-btn').click();
+  await expect(page.getByTestId('entry-settings-menu')).toBeVisible();
+  await page.getByTestId('entry-settings-open-details').click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  return dialog;
 }
 
 async function gotoVisualWorkspace(page: Parameters<typeof configureVisualPage>[0]) {
