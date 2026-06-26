@@ -2,9 +2,12 @@ import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { expect, test } from '@playwright/test';
+import { expect, test } from '@/playwright/suite';
 
 import { writeFakeVelaBin } from '@/amr';
+import { runErrorCard } from '@/playwright/chat';
+import { routeAgents } from '@/playwright/mock-factory';
+import { T } from '@/timeouts';
 import {
   createProjectViaApi,
   gotoProject,
@@ -14,7 +17,32 @@ import {
   sendPrompt,
 } from '@/playwright/amr';
 
+test.describe.configure({ timeout: T.xlong });
+
+async function stubCatalogsEmpty(page: import('@playwright/test').Page) {
+  await page.route('**/api/skills', async (route) => {
+    await route.fulfill({ json: { skills: [] } });
+  });
+  await page.route('**/api/design-templates', async (route) => {
+    await route.fulfill({ json: { designTemplates: [] } });
+  });
+  await page.route('**/api/design-systems', async (route) => {
+    await route.fulfill({ json: { designSystems: [] } });
+  });
+  await routeAgents(page, [
+    {
+      id: 'amr',
+      name: 'Open Design AMR',
+      bin: 'vela',
+      available: true,
+      version: 'test',
+      models: [{ id: 'glm-5', label: 'glm-5' }],
+    },
+  ]);
+}
+
 test('[P0] after local Sign out, AMR runs require re-login and Settings keeps AMR selected', async ({ page }) => {
+  await stubCatalogsEmpty(page);
   const root = join(tmpdir(), `open-design-amr-logout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
   const successVelaBin = await writeFakeVelaBin(join(root, 'bin-success'), {
     assistantText: 'Hello from the e2e fake vela.',
@@ -58,6 +86,7 @@ test('[P0] after local Sign out, AMR runs require re-login and Settings keeps AM
     skillId: null,
     designSystemId: null,
     onboardingCompleted: true,
+    privacyDecisionAt: 1,
     mediaProviders: {},
     agentModels: {
       amr: { model: 'default', reasoning: 'default' },
@@ -75,7 +104,8 @@ test('[P0] after local Sign out, AMR runs require re-login and Settings keeps AM
   await gotoProject(page, projectId);
 
   const settings = await openSettingsDialog(page);
-  await expect(settings.getByRole('button', { name: /Use Local CLI/i }).first()).toBeVisible();
+  await expect(settings.getByRole('button', { name: /Open Design AMR/i }).first()).toHaveAttribute('aria-pressed', 'true');
+  await expect(settings.getByRole('button', { name: /^Sign out$/i })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(settings).toHaveCount(0);
   await page.evaluate(async () => {
@@ -83,18 +113,24 @@ test('[P0] after local Sign out, AMR runs require re-login and Settings keeps AM
     if (!response.ok) throw new Error(`logout failed: ${response.status}`);
   });
   const reopenedSettings = await openSettingsDialog(page);
-  await expect(reopenedSettings.getByRole('button', { name: /Use Local CLI active/i }).first()).toBeVisible();
+  await expect(reopenedSettings.getByRole('button', { name: /Open Design AMR/i }).first()).toHaveAttribute('aria-pressed', 'true');
+  await expect(reopenedSettings.getByRole('button', { name: /^Authorize$|^Sign in$/i })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(reopenedSettings).toHaveCount(0);
-  await putAppConfig(page, {
+  const reloginConfig = {
     ...config,
     agentCliEnv: {
       amr: { VELA_BIN: reloginVelaBin },
     },
-  });
+  };
+  await putAppConfig(page, reloginConfig);
+  await page.evaluate((next) => {
+    window.localStorage.setItem('open-design:config', JSON.stringify(next));
+  }, reloginConfig);
+  await gotoProject(page, projectId);
   await sendPrompt(page, 'AMR logout should require relogin');
 
-  await expect(page.locator('.msg.error')).toContainText(/authorize|sign in again|login missing|expired|ACP session exited before completion/i, {
+  await expect(runErrorCard(page)).toContainText(/authorize|sign in again|login missing|expired|ACP session exited before completion/i, {
     timeout: 15_000,
   });
   await expect(

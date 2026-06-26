@@ -10,7 +10,8 @@ import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import type { ProjectBrowserWorkspaceTab, ProjectTabsState } from '@open-design/contracts';
 import { migrateCritique } from './critique/persistence.js';
-import { migrateMediaTasks } from './media-tasks.js';
+import { migrateMediaTasks } from './media/tasks.js';
+import { migrateLibrary } from './library-store.js';
 import { migratePlugins } from './plugins/persistence.js';
 
 type SqliteDb = Database.Database;
@@ -91,6 +92,16 @@ function migrate(db: SqliteDb): void {
       agent_id        TEXT NOT NULL,
       session_id      TEXT NOT NULL,
       stable_prompt_hash TEXT,
+      -- Resume identity guard: the session is only safe to resume when the
+      -- conversation has not changed shape under it. model/cwd are the runtime
+      -- identity the upstream session was created with; a change forces a fresh
+      -- session. last_message_id is the assistant message this session produced
+      -- on its last turn -- if it is no longer the latest completed assistant
+      -- turn (another agent ran in between, or it was edited away), the session
+      -- is behind and we reseed the full transcript.
+      model           TEXT,
+      cwd             TEXT,
+      last_message_id TEXT,
       updated_at      INTEGER NOT NULL,
       PRIMARY KEY (conversation_id, agent_id),
       FOREIGN KEY(conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
@@ -111,6 +122,7 @@ function migrate(db: SqliteDb): void {
       session_mode TEXT,
       run_context_json TEXT,
       applied_plugin_snapshot_json TEXT,
+      telemetry_finalized_at INTEGER,
       started_at INTEGER,
       ended_at INTEGER,
       position INTEGER NOT NULL,
@@ -285,6 +297,9 @@ function migrate(db: SqliteDb): void {
   if (!messageCols.some((c: DbRow) => c.name === 'applied_plugin_snapshot_json')) {
     db.exec(`ALTER TABLE messages ADD COLUMN applied_plugin_snapshot_json TEXT`);
   }
+  if (!messageCols.some((c: DbRow) => c.name === 'telemetry_finalized_at')) {
+    db.exec(`ALTER TABLE messages ADD COLUMN telemetry_finalized_at INTEGER`);
+  }
   const routineRunCols = db.prepare(`PRAGMA table_info(routine_runs)`).all() as DbRow[];
   if (!routineRunCols.some((c: DbRow) => c.name === 'error_code')) {
     db.exec(`ALTER TABLE routine_runs ADD COLUMN error_code TEXT`);
@@ -339,12 +354,23 @@ function migrate(db: SqliteDb): void {
   if (agentSessionCols.length > 0 && !agentSessionCols.some((c: DbRow) => c.name === 'stable_prompt_hash')) {
     db.exec(`ALTER TABLE agent_sessions ADD COLUMN stable_prompt_hash TEXT`);
   }
+  // Resume identity guard columns (see agent_sessions CREATE TABLE comment).
+  if (agentSessionCols.length > 0 && !agentSessionCols.some((c: DbRow) => c.name === 'model')) {
+    db.exec(`ALTER TABLE agent_sessions ADD COLUMN model TEXT`);
+  }
+  if (agentSessionCols.length > 0 && !agentSessionCols.some((c: DbRow) => c.name === 'cwd')) {
+    db.exec(`ALTER TABLE agent_sessions ADD COLUMN cwd TEXT`);
+  }
+  if (agentSessionCols.length > 0 && !agentSessionCols.some((c: DbRow) => c.name === 'last_message_id')) {
+    db.exec(`ALTER TABLE agent_sessions ADD COLUMN last_message_id TEXT`);
+  }
   const tabsStateCols = db.prepare(`PRAGMA table_info(tabs_state)`).all() as DbRow[];
   if (tabsStateCols.length > 0 && !tabsStateCols.some((c: DbRow) => c.name === 'state_json')) {
     db.exec(`ALTER TABLE tabs_state ADD COLUMN state_json TEXT`);
   }
   migrateCritique(db);
   migrateMediaTasks(db);
+  migrateLibrary(db);
   migratePlugins(db);
 }
 
@@ -620,7 +646,13 @@ export function listProjectsAwaitingInput(db: SqliteDb) {
              FROM messages m
              JOIN conversations c ON c.id = m.conversation_id
             WHERE m.role = 'assistant'
-              AND LOWER(m.content) LIKE '%<question-form%'
+              -- ask-question is an accepted alias for question-form (UI parser
+              -- + daemon open-tag matcher), so an alias-form turn must also
+              -- count as awaiting input.
+              AND (
+                LOWER(m.content) LIKE '%<question-form%'
+                OR LOWER(m.content) LIKE '%<ask-question%'
+              )
          ) latest
         WHERE latest.rowNum = 1
           AND NOT EXISTS (
@@ -1101,20 +1133,30 @@ export function upsertAgentSession(
     agentId: string;
     sessionId: string;
     stablePromptHash?: string | null;
+    model?: string | null;
+    cwd?: string | null;
+    lastMessageId?: string | null;
   },
 ): void {
   db.prepare(
-    `INSERT INTO agent_sessions (conversation_id, agent_id, session_id, stable_prompt_hash, updated_at)
-       VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO agent_sessions
+       (conversation_id, agent_id, session_id, stable_prompt_hash, model, cwd, last_message_id, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(conversation_id, agent_id)
        DO UPDATE SET session_id = excluded.session_id,
                      stable_prompt_hash = excluded.stable_prompt_hash,
+                     model = excluded.model,
+                     cwd = excluded.cwd,
+                     last_message_id = excluded.last_message_id,
                      updated_at = excluded.updated_at`,
   ).run(
     input.conversationId,
     input.agentId,
     input.sessionId,
     input.stablePromptHash ?? null,
+    input.model ?? null,
+    input.cwd ?? null,
+    input.lastMessageId ?? null,
     Date.now(),
   );
 }
@@ -1123,10 +1165,16 @@ export function getAgentSessionRecord(
   db: SqliteDb,
   conversationId: string,
   agentId: string,
-): { sessionId: string; stablePromptHash: string | null } | null {
+): {
+  sessionId: string;
+  stablePromptHash: string | null;
+  model: string | null;
+  cwd: string | null;
+  lastMessageId: string | null;
+} | null {
   const row = db
     .prepare(
-      `SELECT session_id, stable_prompt_hash FROM agent_sessions
+      `SELECT session_id, stable_prompt_hash, model, cwd, last_message_id FROM agent_sessions
         WHERE conversation_id = ? AND agent_id = ?`,
     )
     .get(conversationId, agentId) as DbRow | undefined;
@@ -1135,7 +1183,49 @@ export function getAgentSessionRecord(
     sessionId: row.session_id,
     stablePromptHash:
       typeof row.stable_prompt_hash === 'string' ? row.stable_prompt_hash : null,
+    model: typeof row.model === 'string' ? row.model : null,
+    cwd: typeof row.cwd === 'string' ? row.cwd : null,
+    lastMessageId: typeof row.last_message_id === 'string' ? row.last_message_id : null,
   };
+}
+
+// Conversation cursor for the resume identity guard: the id of the latest
+// COMPLETED assistant message in the conversation, EXCLUDING the current run's
+// in-flight placeholder (`excludeMessageId`). At resolve time the session is in
+// sync iff this equals the assistant message the session last produced —
+// otherwise another agent completed a turn in between, or the session's own last
+// message was edited/removed, and the session is behind. Returns null when there
+// is no prior completed assistant turn.
+//
+// "Completed" means run_status = 'succeeded' — a run stamps its assistant
+// message with the terminal status on finish (server.ts), so an intervening
+// agent run that FAILED or was CANCELED leaves a placeholder that produced no
+// completed turn; counting it as advancement would force a needless cold reseed
+// (silently disabling the resume perf path) even though the stored session is
+// still the latest completed turn. In-flight placeholders have a null run_status
+// and are likewise excluded.
+//
+// `resumableMessageId` is the one allowed exception: the resume-on-failure path
+// persists a session whose own last assistant turn FAILED transiently (the CLI
+// session already committed a tool/artifact block and is resumable). That stored
+// id is admitted through the filter so the session it owns still matches its
+// cursor — while a DIFFERENT later failed/canceled turn (a different id) stays
+// excluded, so genuine advancement by a later succeeded turn is still detected.
+export function latestCompletedAssistantMessageId(
+  db: SqliteDb,
+  conversationId: string,
+  excludeMessageId: string,
+  resumableMessageId: string | null = null,
+): string | null {
+  const row = db
+    .prepare(
+      `SELECT id FROM messages
+        WHERE conversation_id = ? AND role = 'assistant' AND id != ?
+          AND (run_status = 'succeeded' OR id = ?)
+        ORDER BY position DESC LIMIT 1`,
+    )
+    .get(conversationId, excludeMessageId, resumableMessageId) as DbRow | undefined;
+  return row && typeof row.id === 'string' ? row.id : null;
 }
 
 export function updateAgentSessionStableHash(
@@ -1201,6 +1291,10 @@ export function upsertMessage(db: SqliteDb, conversationId: string, m: DbRow) {
               produced_files_json = ?, feedback_json = ?,
               pre_turn_file_names_json = ?,
               session_mode = ?, run_context_json = ?, applied_plugin_snapshot_json = ?,
+              telemetry_finalized_at = CASE
+                WHEN ? THEN COALESCE(telemetry_finalized_at, ?)
+                ELSE telemetry_finalized_at
+              END,
               started_at = ?, ended_at = ?
         WHERE id = ?`,
     ).run(
@@ -1220,6 +1314,8 @@ export function upsertMessage(db: SqliteDb, conversationId: string, m: DbRow) {
       normalizeMessageSessionModeForStorage(m.sessionMode),
       m.runContext ? JSON.stringify(m.runContext) : null,
       m.appliedPluginSnapshot ? JSON.stringify(m.appliedPluginSnapshot) : null,
+      m.telemetryFinalized === true ? 1 : 0,
+      now,
       m.startedAt ?? null,
       m.endedAt ?? null,
       m.id,
@@ -1231,11 +1327,15 @@ export function upsertMessage(db: SqliteDb, conversationId: string, m: DbRow) {
       )
       .get(conversationId) as DbRow | undefined;
     const position = (max?.m ?? -1) + 1;
-    // 22 values: id, conversation_id, role, content, agent_id, agent_name,
+    const createdAt = typeof m.createdAt === 'number' && Number.isFinite(m.createdAt)
+      ? m.createdAt
+      : now;
+    // 23 values: id, conversation_id, role, content, agent_id, agent_name,
     // run_id, run_status, last_run_event_id, events_json, attachments_json,
     // comment_attachments_json, produced_files_json, feedback_json,
     // pre_turn_file_names_json, session_mode, run_context_json,
-    // applied_plugin_snapshot_json, started_at, ended_at, position, created_at.
+    // applied_plugin_snapshot_json, telemetry_finalized_at, started_at,
+    // ended_at, position, created_at.
     db.prepare(
       `INSERT INTO messages
          (id, conversation_id, role, content, agent_id, agent_name,
@@ -1243,8 +1343,8 @@ export function upsertMessage(db: SqliteDb, conversationId: string, m: DbRow) {
           attachments_json, comment_attachments_json, produced_files_json,
           feedback_json, pre_turn_file_names_json,
           session_mode, run_context_json, applied_plugin_snapshot_json,
-          started_at, ended_at, position, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          telemetry_finalized_at, started_at, ended_at, position, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       m.id,
       conversationId,
@@ -1264,10 +1364,11 @@ export function upsertMessage(db: SqliteDb, conversationId: string, m: DbRow) {
       normalizeMessageSessionModeForStorage(m.sessionMode),
       m.runContext ? JSON.stringify(m.runContext) : null,
       m.appliedPluginSnapshot ? JSON.stringify(m.appliedPluginSnapshot) : null,
+      m.telemetryFinalized === true ? now : null,
       m.startedAt ?? null,
       m.endedAt ?? null,
       position,
-      now,
+      createdAt,
     );
   }
   // Bump conversation activity so the sidebar's recency sort works.
@@ -1295,6 +1396,27 @@ export function upsertMessage(db: SqliteDb, conversationId: string, m: DbRow) {
     )
     .get(m.id) as DbRow | undefined;
   return row ? normalizeMessage(row) : null;
+}
+
+export function getMessageTelemetryFinalizationState(db: SqliteDb, messageId: string) {
+  const row = db
+    .prepare(
+      `SELECT telemetry_finalized_at AS telemetryFinalizedAt
+         FROM messages
+        WHERE id = ?`,
+    )
+    .get(messageId) as DbRow | undefined;
+  if (!row) {
+    return {
+      exists: false,
+      finalizedAt: null,
+    };
+  }
+  return {
+    exists: true,
+    finalizedAt:
+      typeof row.telemetryFinalizedAt === 'number' ? row.telemetryFinalizedAt : null,
+  };
 }
 
 export function appendMessageStatusEvent(db: SqliteDb, messageId: string, event: DbRow) {

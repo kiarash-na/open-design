@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Dialog, DialogFooter, DialogTitle } from '@open-design/components';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { useT } from '../i18n';
-import type { AppConfig, DesignSystemSummary } from '../types';
+import type { AppConfig, DesignSystemGenerationJob, DesignSystemSummary } from '../types';
 import {
   fetchDesignSystems,
   importGitHubDesignSystem,
@@ -29,6 +30,7 @@ interface Props {
    * flow through here.
    */
   onDesignSystemsChanged?: (affectedDesignSystemId?: string) => void;
+  onDesignSystemImportRebuildJob?: (designSystemId: string, job: DesignSystemGenerationJob) => void;
 }
 
 function toggleCraftSlug(current: string[], slug: string, enabled: boolean): string[] {
@@ -38,8 +40,14 @@ function toggleCraftSlug(current: string[], slug: string, enabled: boolean): str
   return Array.from(next);
 }
 
-export function DesignSystemsSection({ cfg, setCfg, onDesignSystemsChanged }: Props) {
+export function DesignSystemsSection({
+  cfg,
+  setCfg,
+  onDesignSystemsChanged,
+  onDesignSystemImportRebuildJob,
+}: Props) {
   const t = useT();
+  const renameTitleId = useId();
   const cardRefs = useRef(new Map<string, HTMLDivElement>());
   const [designSystems, setDesignSystems] = useState<DesignSystemSummary[]>([]);
   const [search, setSearch] = useState('');
@@ -242,6 +250,9 @@ export function DesignSystemsSection({ cfg, setCfg, onDesignSystemsChanged }: Pr
     setImportPath('');
     setImportedDesignSystem(result.designSystem);
     setImportMessage(result.designSystem.title);
+    if (result.tokenContractRebuild?.job) {
+      onDesignSystemImportRebuildJob?.(result.designSystem.id, result.tokenContractRebuild.job);
+    }
     onDesignSystemsChanged?.(result.designSystem.id);
   }
 
@@ -595,50 +606,45 @@ export function DesignSystemsSection({ cfg, setCfg, onDesignSystemsChanged }: Pr
         ) : null}
       </AnimatePresence>
       {renameTarget ? (
-        <div className="modal-backdrop" onClick={cancelRename}>
-          <form
-            className="modal modal-rename"
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={(e) => {
-              e.preventDefault();
-              void commitRename();
-            }}
-          >
-            <h2>{t('common.rename')}</h2>
-            <label>
-              <input
-                type="text"
-                value={renameInput}
-                autoFocus
-                aria-label={t('common.rename')}
-                onChange={(e) => setRenameInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    cancelRename();
-                  }
-                }}
-              />
-            </label>
-            {renameError ? <p className="library-install-error">{renameError}</p> : null}
-            <div className="row">
-              <button type="button" onClick={cancelRename}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="submit"
-                className="primary"
-                disabled={
-                  renaming ||
-                  !renameInput.trim() ||
-                  renameInput.trim() === renameTarget.original
-                }
-              >
-                {t('common.save')}
-              </button>
-            </div>
-          </form>
-        </div>
+        <Dialog
+          as="form"
+          className="modal-rename"
+          onClose={cancelRename}
+          closeOnEscape
+          ariaLabelledBy={renameTitleId}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void commitRename();
+          }}
+        >
+          <DialogTitle id={renameTitleId}>{t('common.rename')}</DialogTitle>
+          <label>
+            <input
+              type="text"
+              value={renameInput}
+              autoFocus
+              aria-label={t('common.rename')}
+              onChange={(e) => setRenameInput(e.target.value)}
+            />
+          </label>
+          {renameError ? <p className="library-install-error">{renameError}</p> : null}
+          <DialogFooter className="row">
+            <button type="button" onClick={cancelRename}>
+              {t('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              className="primary"
+              disabled={
+                renaming ||
+                !renameInput.trim() ||
+                renameInput.trim() === renameTarget.original
+              }
+            >
+              {t('common.save')}
+            </button>
+          </DialogFooter>
+        </Dialog>
       ) : null}
     </section>
   );

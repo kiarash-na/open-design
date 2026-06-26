@@ -3,6 +3,7 @@ import type {
   ApplyResult,
   ChatSessionMode,
   InstalledPluginRecord,
+  ProjectKind,
   ProjectMetadata,
 } from '@open-design/contracts';
 import {
@@ -12,6 +13,7 @@ import {
   resolvePluginQueryFallback,
 } from '../state/projects';
 import { useI18n } from '../i18n';
+import { localizePluginDescription, localizePluginTitle } from './plugins-home/localization';
 import { Icon } from './Icon';
 import { PluginDetailsModal } from './PluginDetailsModal';
 import { TrustBadge } from './TrustBadge';
@@ -22,6 +24,9 @@ import { trackPluginLoopClick } from '../analytics/events';
 export interface PluginLoopSubmit {
   prompt: string;
   pluginId: string | null;
+  // Marketplace trust of the routed plugin (official / community / …), used
+  // to attribute project_create_result to a plugin type. Null when no plugin.
+  pluginType?: string | null;
   skillId?: string | null;
   appliedPluginSnapshotId: string | null;
   pluginTitle: string | null;
@@ -39,7 +44,7 @@ export interface PluginLoopSubmit {
   // Null means the caller did not stamp an explicit kind. HomeView's
   // free-form fallback uses `other` and binds the hidden od-default
   // router plugin so the agent asks for the exact task type in-chat.
-  projectKind?: 'prototype' | 'deck' | 'template' | 'image' | 'video' | 'audio' | 'other' | null;
+  projectKind?: ProjectKind | null;
   projectMetadata?: ProjectMetadata | null;
   workingDir?: string | null;
   // Single-use desktop token minted for `workingDir` when the folder was
@@ -176,7 +181,7 @@ export function PluginLoopHome({ onSubmit }: Props) {
           <div className="plugin-loop-home__active" data-active-plugin-id={active.record.id}>
             <span className="plugin-loop-home__active-chip">
               <span className="plugin-loop-home__active-dot" aria-hidden />
-              <span>Plugin: {active.record.title}</span>
+              <span>Plugin: {localizePluginTitle(locale, active.record)}</span>
               <button
                 type="button"
                 className="plugin-loop-home__active-clear"
@@ -247,6 +252,8 @@ export function PluginLoopHome({ onSubmit }: Props) {
             const isActive = active?.record.id === p.id;
             const isPending = pendingApplyId === p.id;
             const links = derivePluginSourceLinks(p);
+            const cardTitle = localizePluginTitle(locale, p);
+            const cardDescription = localizePluginDescription(locale, p);
             return (
               <div
                 key={p.id}
@@ -255,12 +262,12 @@ export function PluginLoopHome({ onSubmit }: Props) {
                 data-plugin-id={p.id}
               >
                 <div className="plugin-loop-home__card-head">
-                  <span className="plugin-loop-home__card-title">{p.title}</span>
+                  <span className="plugin-loop-home__card-title">{cardTitle}</span>
                   <TrustBadge trust={p.trust} />
                 </div>
-                {p.manifest?.description ? (
+                {cardDescription ? (
                   <div className="plugin-loop-home__card-desc">
-                    {p.manifest.description}
+                    {cardDescription}
                   </div>
                 ) : null}
                 <div className="plugin-loop-home__card-meta">
