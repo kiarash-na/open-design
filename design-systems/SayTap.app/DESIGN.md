@@ -286,7 +286,44 @@ SayTap.app's approach to elevation is nearly as flat as Tesla's, but with a diff
 - Art direction: mobile crops may tighten on vehicle subjects, reducing environmental context
 - Lazy loading: PrimeReact handles progressive image loading for below-fold content
 
-## 9. Agent Prompt Guide
+## 9. Logo & Emblem
+
+### The SayTap.app Mark — "Aura Wave"
+
+The brand mark is a single continuous sine wave line in a vertical capsule silhouette, representing a voice waveform frozen as an infinite loop. It uses uniform stroke weight with no gradients or fills — pure geometric line art.
+
+**Mark specification:**
+- **Color:** SayTap.app Red (`#DA291C`) — the iconic Rosso Corsa
+- **Background:** Transparent (no fill, no bounding shape)
+- **Form:** Sine wave with amplitude envelope — peaks subtly at vertical center, calms toward top and bottom edges
+- **Stroke:** Uniform weight, rounded caps, no fill
+- **Proportions:** Horizontal orientation, approximately 2:1 width-to-height ratio
+- **Minimum size:** 16×16px (favicon). At this size the wave simplifies to a single elegant curve.
+
+**Usage rules:**
+- The mark always appears in SayTap.app Red on transparent background
+- On dark surfaces: pure red mark, no glow or shadow
+- On light surfaces: same red mark — the color carries enough weight on white
+- Never distort the wave proportions. Never add a container box, circle, or badge around the mark
+- The mark is the primary brand identifier. It appears without wordmark in app icons, favicons, and social avatars
+
+### Logo Size Matrix (Next.js / SEO)
+
+| File | Size | Context | Location |
+|------|------|---------|----------|
+| `icon.svg` | Vector | Next.js App Router default icon | `app/` |
+| `favicon.ico` | 32×32 | Browser tab icon | `app/` |
+| `apple-icon.png` | 180×180 | iOS home screen / Apple touch | `app/` |
+| `android-chrome-192x192.png` | 192×192 | Android chrome app icon | `public/` |
+| `android-chrome-512x512.png` | 512×512 | Android splash / PWA | `public/` |
+| `favicon-16x16.png` | 16×16 | Legacy favicon | `public/` |
+| `favicon-32x32.png` | 32×32 | Legacy favicon | `public/` |
+| `mstile-150x150.png` | 150×150 | Microsoft tile | `public/` |
+| `safari-pinned-tab.svg` | Vector | Safari pinned tab (monochrome) | `public/` |
+| `opengraph-image.png` | 1200×630 | Facebook / LinkedIn / general OG | `public/` |
+| `twitter-image.png` | 1200×600 | Twitter / X card image | `public/` |
+
+## 10. Agent Prompt Guide
 
 ### Quick Color Reference
 - Primary CTA: "SayTap.app Red (#DA291C)"

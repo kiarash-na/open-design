@@ -1,0 +1,123 @@
+/* design-systems/kiarash/tokens.css
+ *
+ * Structured token bindings for Kiarash.
+ * Dark, bold, minimal personal brand — Sharp Orange accent on a near-black
+ * canvas with Orbitron display type and Geist body type.
+ */
+
+:root {
+  /* ── Canvas ── */
+  --bg: #121212;
+  --bg-light: #ffffff;
+  --surface: #1f1f1f;
+  --surface-light: #f5f5f5;
+  --surface-warm: #2a2a2a;
+
+  /* ── Foreground ── */
+  --fg: #ffffff;
+  --fg-2: #b0b0b0;
+  --muted: #6b6b6b;
+  --meta: var(--muted);
+
+  /* ── Accents ── */
+  --accent: #f85028;
+  --accent-on: #ffffff;
+  --accent-hover: color-mix(in oklab, var(--accent), black 12%);
+  --accent-active: color-mix(in oklab, var(--accent), black 20%);
+  --accent-secondary: #6f8557;
+  --accent-warm: #f7df9b;
+  --accent-deep: #28367b;
+
+  /* ── Neutrals ── */
+  --border: #333333;
+  --border-light: #e5e5e5;
+  --border-soft: #2a2a2a;
+  --hairline: #333333;
+
+  /* ── Semantic ── */
+  --success: #16a34a;
+  --warn: #d97706;
+  --danger: #dc2626;
+
+  /* ── Typography ── */
+  --font-display: "Orbitron", "Exo 2", "Eurostile", sans-serif;
+  --font-body: "Geist", "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── Type scale ── */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+  --text-4xl: 48px;
+  --text-5xl: 64px;
+
+  /* ── Leading ── */
+  --leading-body: 1.5;
+  --leading-tight: 1.05;
+  --leading-heading: 1.15;
+
+  /* ── Tracking ── */
+  --tracking-display: -0.02em;
+  --tracking-body: 0;
+  --tracking-label: 0.02em;
+
+  /* ── Spacing ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ── Section padding ── */
+  --section-y-desktop: 64px;
+  --section-y-tablet: 48px;
+  --section-y-phone: 32px;
+
+  /* ── Border radius ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-pill: 9999px;
+
+  /* ── Elevation ── */
+  --elev-flat: none;
+  --elev-ring: 0 0 0 1px var(--border);
+  --elev-raised: 0 4px 12px rgba(0, 0, 0, 0.25);
+
+  /* ── Focus ── */
+  --focus-ring: 0 0 0 2px var(--accent);
+
+  /* ── Motion ── */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* ── Container ── */
+  --container-max: 1200px;
+  --container-gutter-desktop: 64px;
+  --container-gutter-tablet: 40px;
+  --container-gutter-phone: 24px;
+
+  /* ── Slide canvas (social / deck) ── */
+  --slide-canvas-square: 1080px;
+  --slide-canvas-portrait-w: 1080px;
+  --slide-canvas-portrait-h: 1350px;
+  --slide-canvas-deck-w: 1920px;
+  --slide-canvas-deck-h: 1080px;
+
+  /* ── Spine ── */
+  --spine-offset-desktop: 64px;
+  --spine-offset-mobile: 40px;
+  --spine-color: var(--border);
+}

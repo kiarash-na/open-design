@@ -14,7 +14,7 @@
   --meta: #ffd200;
   --border: #2a201c;
   --border-soft: #1c1714;
-  --accent: #dc0000;
+  --accent: #DA291C;
   --accent-on: #ffffff;
   --accent-hover: color-mix(in oklab, var(--accent), black 8%);
   --accent-active: color-mix(in oklab, var(--accent), black 14%);

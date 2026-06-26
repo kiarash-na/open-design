@@ -215,6 +215,38 @@ export const BRAND_EXTENSIONS: Readonly<Record<string, readonly string[]>> = {
   openai: [
     "--space-16", // 64px — major section gap in OpenAI's DESIGN.md §5 spacing scale
   ],
+  kiarash: [
+    // Extra surface tiers (dark-first brand with light alternate)
+    "--bg-light",
+    "--surface-light",
+    // Extended accent palette (Sharp Orange primary + 3 brand accents)
+    "--accent-secondary",
+    "--accent-warm",
+    "--accent-deep",
+    // Extended border / hairline
+    "--border-light",
+    "--hairline",
+    // Extended typography (slide-deck display size beyond standard scale)
+    "--text-5xl",
+    "--leading-heading",
+    "--tracking-body",
+    "--tracking-label",
+    // Extended spacing (slide canvas rhythm)
+    "--space-10",
+    "--space-16",
+    "--space-20",
+    "--space-24",
+    // Slide canvas dimensions (social carousel / deck sizing)
+    "--slide-canvas-square",
+    "--slide-canvas-portrait-w",
+    "--slide-canvas-portrait-h",
+    "--slide-canvas-deck-w",
+    "--slide-canvas-deck-h",
+    // Spine (compositional anchor line)
+    "--spine-offset-desktop",
+    "--spine-offset-mobile",
+    "--spine-color",
+  ],
   kami: [
     "--accent-light", // brighter ink-blue for links on dark surfaces
     "--text-md", // 15px lede tier between --text-base and --text-lg

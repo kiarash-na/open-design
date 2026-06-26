@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kiarash — reference components</title>
+    <meta name="description" content="Reference fixture for design-systems/kiarash: dark, bold, minimal personal brand with Orbitron display type, Geist body type, and Sharp Orange accent." />
+    <style>
+      :root {
+        --bg: #121212;
+        --bg-light: #ffffff;
+        --surface: #1f1f1f;
+        --surface-light: #f5f5f5;
+        --surface-warm: #2a2a2a;
+        --fg: #ffffff;
+        --fg-2: #b0b0b0;
+        --muted: #6b6b6b;
+        --meta: var(--muted);
+        --accent: #f85028;
+        --accent-on: #ffffff;
+        --accent-hover: color-mix(in oklab, var(--accent), black 12%);
+        --accent-active: color-mix(in oklab, var(--accent), black 20%);
+        --accent-secondary: #6f8557;
+        --accent-warm: #f7df9b;
+        --accent-deep: #28367b;
+        --border: #333333;
+        --border-light: #e5e5e5;
+        --border-soft: #2a2a2a;
+        --hairline: #333333;
+        --success: #16a34a;
+        --warn: #d97706;
+        --danger: #dc2626;
+        --font-display: "Orbitron", "Exo 2", "Eurostile", sans-serif;
+        --font-body: "Geist", "Inter", -apple-system, system-ui, sans-serif;
+        --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+        --text-xs: 12px;
+        --text-sm: 14px;
+        --text-base: 16px;
+        --text-lg: 18px;
+        --text-xl: 20px;
+        --text-2xl: 24px;
+        --text-3xl: 32px;
+        --text-4xl: 48px;
+        --text-5xl: 64px;
+        --leading-body: 1.5;
+        --leading-tight: 1.05;
+        --leading-heading: 1.15;
+        --tracking-display: -0.02em;
+        --tracking-body: 0;
+        --tracking-label: 0.02em;
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 20px;
+        --space-6: 24px;
+        --space-8: 32px;
+        --space-10: 40px;
+        --space-12: 48px;
+        --space-16: 64px;
+        --space-20: 80px;
+        --space-24: 96px;
+        --section-y-desktop: 64px;
+        --section-y-tablet: 48px;
+        --section-y-phone: 32px;
+        --radius-sm: 4px;
+        --radius-md: 6px;
+        --radius-lg: 8px;
+        --radius-pill: 9999px;
+        --elev-flat: none;
+        --elev-ring: 0 0 0 1px var(--border);
+        --elev-raised: 0 4px 12px rgba(0, 0, 0, 0.25);
+        --focus-ring: 0 0 0 2px var(--accent);
+        --motion-fast: 150ms;
+        --motion-base: 200ms;
+        --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
+        --container-max: 1200px;
+        --container-gutter-desktop: 64px;
+        --container-gutter-tablet: 40px;
+        --container-gutter-phone: 24px;
+        --slide-canvas-square: 1080px;
+        --slide-canvas-portrait-w: 1080px;
+        --slide-canvas-portrait-h: 1350px;
+        --slide-canvas-deck-w: 1920px;
+        --slide-canvas-deck-h: 1080px;
+        --spine-offset-desktop: 64px;
+        --spine-offset-mobile: 40px;
+        --spine-color: var(--border);
+      }
+
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-body);
+        font-size: var(--text-base);
+        line-height: var(--leading-body);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── Layout primitives ── */
+      .container {
+        max-width: var(--container-max);
+        margin-inline: auto;
+        padding-inline: var(--container-gutter-desktop);
+      }
+      section { padding-block: var(--section-y-desktop); }
+      @media (max-width: 1023px) {
+        .container { padding-inline: var(--container-gutter-tablet); }
+        section { padding-block: var(--section-y-tablet); }
+      }
+      @media (max-width: 639px) {
+        .container { padding-inline: var(--container-gutter-phone); }
+        section { padding-block: var(--section-y-phone); }
+      }
+
+      /* ── Typography ── */
+      h1, h2, h3, h4 { margin: 0; font-family: var(--font-display); line-height: var(--leading-tight); }
+      h1 {
+        font-size: var(--text-4xl);
+        font-weight: 600;
+        letter-spacing: var(--tracking-display);
+      }
+      h2 {
+        font-size: var(--text-3xl);
+        font-weight: 600;
+        letter-spacing: var(--tracking-display);
+      }
+      h3 {
+        font-size: var(--text-2xl);
+        font-weight: 600;
+        line-height: var(--leading-heading);
+      }
+      h4 {
+        font-size: var(--text-xl);
+        font-weight: 500;
+        line-height: var(--leading-heading);
+        font-family: var(--font-body);
+      }
+      p { margin: 0; }
+      .brand-display {
+        font-family: var(--font-display);
+        font-size: var(--text-5xl);
+        font-weight: 700;
+        line-height: var(--leading-tight);
+        letter-spacing: var(--tracking-display);
+      }
+      .lead {
+        font-size: var(--text-lg);
+        font-weight: 500;
+        line-height: 1.4;
+        color: var(--fg-2);
+      }
+      .body-text {
+        font-size: var(--text-base);
+        font-weight: 400;
+        color: var(--fg-2);
+      }
+      .caption {
+        font-size: var(--text-xs);
+        font-weight: 400;
+        color: var(--muted);
+        letter-spacing: var(--tracking-label);
+      }
+      .eyebrow {
+        font-family: var(--font-body);
+        font-size: var(--text-sm);
+        font-weight: 500;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: var(--tracking-label);
+      }
+      .eyebrow::before {
+        display: inline-block;
+        width: 24px;
+        height: 2px;
+        background: var(--accent);
+        margin-right: var(--space-3);
+        vertical-align: middle;
+        content: "";
+      }
+
+      /* ── Spine ── */
+      .spine {
+        position: fixed;
+        left: var(--spine-offset-desktop);
+        top: var(--space-12);
+        bottom: var(--space-12);
+        width: 1px;
+        background: var(--spine-color);
+      }
+      @media (max-width: 639px) {
+        .spine { left: var(--spine-offset-mobile); }
+      }
+
+      /* ── K mark ── */
+      .k-mark {
+        font-family: var(--font-display);
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .k-watermark {
+        position: absolute;
+        font-family: var(--font-display);
+        font-size: 320px;
+        font-weight: 700;
+        color: var(--accent-secondary);
+        opacity: 0.08;
+        line-height: 1;
+        user-select: none;
+        pointer-events: none;
+      }
+
+      /* ── Stat block ── */
+      .stat-block {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-6);
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+      }
+      .stat-value {
+        font-family: var(--font-display);
+        font-size: var(--text-4xl);
+        font-weight: 700;
+        line-height: var(--leading-tight);
+        color: var(--fg);
+      }
+      .stat-label {
+        font-size: var(--text-sm);
+        font-weight: 500;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: var(--tracking-label);
+      }
+      .stat-accent-bar {
+        width: 40px;
+        height: 4px;
+        background: var(--accent);
+        margin-top: var(--space-3);
+      }
+
+      /* ── Quote block ── */
+      .quote-block {
+        position: relative;
+        padding: var(--space-8) var(--space-6);
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+      }
+      .quote-mark {
+        font-family: var(--font-display);
+        font-size: 48px;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1;
+      }
+      .quote-text {
+        font-size: var(--text-lg);
+        font-weight: 500;
+        color: var(--fg);
+        line-height: 1.4;
+        margin-top: var(--space-2);
+      }
+      .quote-attribution {
+        font-size: var(--text-xs);
+        color: var(--muted);
+        margin-top: var(--space-4);
+      }
+      .quote-attribution::before {
+        content: "— ";
+      }
+
+      /* ── Tag / Pill ── */
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--space-1) var(--space-3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: var(--text-xs);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: var(--tracking-label);
+        color: var(--fg-2);
+      }
+      .tag-active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-on);
+      }
+
+      /* ── Slide mockups ── */
+      .slide-mockup {
+        position: relative;
+        width: 100%;
+        max-width: 540px;
+        aspect-ratio: 1 / 1;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        padding: var(--space-12);
+      }
+      .slide-mockup .spine-mockup {
+        position: absolute;
+        left: var(--space-8);
+        top: var(--space-12);
+        bottom: var(--space-12);
+        width: 1px;
+        background: var(--border);
+      }
+      .slide-mockup .k-corner {
+        position: absolute;
+        bottom: var(--space-6);
+        left: var(--space-6);
+        font-family: var(--font-display);
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      /* ── Utilities ── */
+      .stack-2 > * + * { margin-block-start: var(--space-2); }
+      .stack-3 > * + * { margin-block-start: var(--space-3); }
+      .stack-4 > * + * { margin-block-start: var(--space-4); }
+      .stack-6 > * + * { margin-block-start: var(--space-6); }
+      .stack-8 > * + * { margin-block-start: var(--space-8); }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-6);
+      }
+      @media (max-width: 1023px) {
+        .grid-3 { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 639px) {
+        .grid-3 { grid-template-columns: 1fr; }
+      }
+      .accent-text { color: var(--accent); }
+      .secondary-text { color: var(--accent-secondary); }
+    </style>
+  </head>
+  <body>
+    <div class="spine" aria-hidden="true"></div>
+
+    <main class="container">
+      <!-- ════════════════════════════════════════════════════════════
+           TITLE SLIDE — Brand lockup, K watermark, tagline
+      ═══════════════════════════════════════════════════════════════ -->
+      <section>
+        <div class="slide-mockup" style="margin-inline: auto;">
+          <div class="spine-mockup" aria-hidden="true"></div>
+          <div class="k-watermark" style="right: -40px; bottom: -40px;">K</div>
+          <div class="stack-6" style="padding-left: var(--space-8);">
+            <p class="eyebrow">Personal Brand</p>
+            <h1 class="brand-display" style="font-size: var(--text-4xl);">Kiarash</h1>
+            <p class="lead" style="font-size: var(--text-base);">
+              <span style="color: var(--fg);">Adventurer &amp;</span>
+              <span class="secondary-text">Entrepreneur</span>
+            </p>
+          </div>
+          <div class="k-corner">K</div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════
+           STAT SLIDE — Three stat blocks with accent bar
+      ═══════════════════════════════════════════════════════════════ -->
+      <section>
+        <p class="eyebrow" style="margin-bottom: var(--space-8);">By the numbers</p>
+        <div class="grid-3">
+          <div class="stat-block">
+            <span class="stat-value">12</span>
+            <span class="stat-label">Countries explored</span>
+            <div class="stat-accent-bar"></div>
+          </div>
+          <div class="stat-block">
+            <span class="stat-value">8</span>
+            <span class="stat-label">Products shipped</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-value">5+</span>
+            <span class="stat-label">Years building</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════
+           QUOTE SLIDE — Quote block with accent mark
+      ═══════════════════════════════════════════════════════════════ -->
+      <section>
+        <div class="quote-block" style="max-width: 720px; margin-inline: auto;">
+          <div class="quote-mark">"</div>
+          <p class="quote-text">Build things that matter. Explore places that change you.</p>
+          <p class="quote-attribution">Kiarash</p>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════
+           TYPOGRAPHY SPECIMEN — All type roles
+      ═══════════════════════════════════════════════════════════════ -->
+      <section>
+        <p class="eyebrow" style="margin-bottom: var(--space-8);">Typography</p>
+        <div class="stack-8">
+          <div>
+            <p class="caption" style="margin-bottom: var(--space-2);">Brand Display · Orbitron 700 · 64px</p>
+            <p class="brand-display">Kiarash</p>
+          </div>
+          <div>
+            <p class="caption" style="margin-bottom: var(--space-2);">H1 · Orbitron 600 · 48px</p>
+            <h1>Adventure awaits.</h1>
+          </div>
+          <div>
+            <p class="caption" style="margin-bottom: var(--space-2);">H2 · Geist 600 · 32px</p>
+            <h2>Build boldly.</h2>
+          </div>
+          <div>
+            <p class="caption" style="margin-bottom: var(--space-2);">Lead · Geist 500 · 18px</p>
+            <p class="lead">A personal brand built on action, exploration, and intentional design.</p>
+          </div>
+          <div>
+            <p class="caption" style="margin-bottom: var(--space-2);">Body · Geist 400 · 16px</p>
+            <p class="body-text">The Kiarash brand system is dark-first, high-contrast, and minimal. Every element earns its place.</p>
+          </div>
+          <div>
+            <p class="caption" style="margin-bottom: var(--space-2);">Caption · Geist 400 · 12px</p>
+            <p class="caption">Version 2.0 · Dec 2025</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════
+           COLOR SWATCHES — All palette colors
+      ═══════════════════════════════════════════════════════════════ -->
+      <section>
+        <p class="eyebrow" style="margin-bottom: var(--space-8);">Color palette</p>
+        <div class="grid-3">
+          <div class="stat-block">
+            <div style="width: 48px; height: 48px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);"></div>
+            <p class="stat-label" style="margin-top: var(--space-3);">Dark Coal</p>
+            <p class="caption">#121212</p>
+          </div>
+          <div class="stat-block">
+            <div style="width: 48px; height: 48px; background: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-sm);"></div>
+            <p class="stat-label" style="margin-top: var(--space-3);">Bright White</p>
+            <p class="caption">#ffffff</p>
+          </div>
+          <div class="stat-block">
+            <div style="width: 48px; height: 48px; background: var(--accent); border-radius: var(--radius-sm);"></div>
+            <p class="stat-label" style="margin-top: var(--space-3);">Sharp Orange</p>
+            <p class="caption">#f85028</p>
+          </div>
+          <div class="stat-block">
+            <div style="width: 48px; height: 48px; background: var(--accent-secondary); border-radius: var(--radius-sm);"></div>
+            <p class="stat-label" style="margin-top: var(--space-3);">Army Green</p>
+            <p class="caption">#6f8557</p>
+          </div>
+          <div class="stat-block">
+            <div style="width: 48px; height: 48px; background: var(--accent-warm); border-radius: var(--radius-sm);"></div>
+            <p class="stat-label" style="margin-top: var(--space-3);">Basic Beige</p>
+            <p class="caption">#f7df9b</p>
+          </div>
+          <div class="stat-block">
+            <div style="width: 48px; height: 48px; background: var(--accent-deep); border-radius: var(--radius-sm);"></div>
+            <p class="stat-label" style="margin-top: var(--space-3);">Elite Blue</p>
+            <p class="caption">#28367b</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════
+           TAGS — Pill specimens
+      ═══════════════════════════════════════════════════════════════ -->
+      <section>
+        <p class="eyebrow" style="margin-bottom: var(--space-8);">Tags</p>
+        <div style="display: flex; flex-wrap: wrap; gap: var(--space-3);">
+          <span class="tag">Entrepreneur</span>
+          <span class="tag">Adventurer</span>
+          <span class="tag">Builder</span>
+          <span class="tag tag-active">Featured</span>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

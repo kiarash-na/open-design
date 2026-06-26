@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "od-design-system-project/v1",
+  "id": "kiarash",
+  "name": "Kiarash",
+  "category": "Personal Brand",
+  "description": "Adventurer & Entrepreneur. Dark, bold, minimal personal brand built on high-contrast typography, a signature 'K' lettermark, and restrained accent color usage. Designed for social carousels, slide decks, and presentation artifacts.",
+  "source": {
+    "type": "bundled",
+    "origin": "hand-authored"
+  },
+  "files": {
+    "design": "DESIGN.md",
+    "tokens": "tokens.css",
+    "components": "components.html"
+  },
+  "craft": {
+    "applies": [],
+    "suggested": [
+      "color",
+      "accessibility-baseline"
+    ],
+    "exemptions": []
+  }
+}
