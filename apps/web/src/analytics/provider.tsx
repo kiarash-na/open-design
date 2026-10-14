@@ -27,12 +27,15 @@ import {
   setAnalyticsUserId,
   setConfigureGlobals,
 } from './client';
+import { APP_VERSION_PLACEHOLDER } from './app-version';
 import { patchExceptionTrackingAppVersion } from './error-tracking';
+import { setChatCorrelation } from '../observability/chat-context';
 import type { AnalyticsConfigureGlobals } from '@open-design/contracts/analytics';
 import {
   detectClientType,
   getAnonymousId,
   getSessionId,
+  isFirstSession,
 } from './identity';
 import { randomUUID } from '../utils/uuid';
 
@@ -91,7 +94,6 @@ function isSameOriginApiCall(url: unknown): boolean {
   }
 }
 
-const APP_VERSION_PLACEHOLDER = '0.0.0';
 let runtimeAppVersion: string | null = null;
 let runtimeAppVersionPromise: Promise<string | null> | null = null;
 
@@ -105,7 +107,17 @@ async function loadRuntimeAppVersion(): Promise<string | null> {
       try {
         const res = await fetch('/api/version');
         if (!res.ok) return null;
-        const body = (await res.json()) as { version?: { version?: string } };
+        const body = (await res.json()) as {
+          version?: { version?: string; channel?: string };
+        };
+        // The daemon has always answered with `channel` alongside `version`
+        // (see `resolveAppVersionInfo`); we simply dropped it on the floor.
+        // It is the one dimension that separates "the packaged stable build
+        // is janky" from "a dev daemon is janky", so a chat-health dashboard
+        // without it cannot tell a real regression from local noise. Stamped
+        // before the early return below so a daemon that reports a channel but
+        // no version still contributes it.
+        setChatCorrelation({ release_channel: body?.version?.channel });
         const next = body?.version?.version;
         if (!next) return null;
         runtimeAppVersion = next;
@@ -166,6 +178,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       anonymousId: getAnonymousId(),
       sessionId: getSessionId(),
       clientType: detectClientType(),
+      // Pinned once per tab session (spec §11.1 common field).
+      isFirstSession: isFirstSession(),
     }),
     [],
   );
@@ -188,6 +202,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         anonymousId: identity.anonymousId,
         sessionId: identity.sessionId,
         clientType: identity.clientType,
+        isFirstSession: identity.isFirstSession,
         locale,
         appVersion: resolvedAppVersion,
       });
@@ -195,6 +210,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         anonymousId: identity.anonymousId,
         sessionId: identity.sessionId,
         clientType: identity.clientType,
+        isFirstSession: identity.isFirstSession,
         locale,
         appVersion: resolvedAppVersion,
       });
@@ -252,6 +268,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         anonymousId: identity.anonymousId,
         sessionId: identity.sessionId,
         clientType: identity.clientType,
+        isFirstSession: identity.isFirstSession,
         locale: locale,
         appVersion: resolvedAppVersion,
       });
@@ -310,6 +327,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           anonymousId: identity.anonymousId,
           sessionId: identity.sessionId,
           clientType: identity.clientType,
+          isFirstSession: identity.isFirstSession,
           locale: locale,
           appVersion: resolvedAppVersion,
         });
@@ -350,6 +368,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
               anonymousId: identity.anonymousId,
               sessionId: identity.sessionId,
               clientType: identity.clientType,
+              isFirstSession: identity.isFirstSession,
               locale,
               appVersion: resolvedAppVersion,
             });

@@ -9,14 +9,6 @@ cli
       await import("./metadata/prepare-beta.ts");
       return;
     }
-    if (channel === "betas") {
-      await import("./metadata/prepare-betas.ts");
-      return;
-    }
-    if (channel === "preview") {
-      await import("./metadata/prepare-preview.ts");
-      return;
-    }
     if (channel === "prerelease" || channel === "stable") {
       process.env.OPEN_DESIGN_RELEASE_CHANNEL = channel;
       await import("./metadata/prepare-stable.ts");
@@ -45,6 +37,64 @@ cli
   });
 
 cli
+  .command("publish-dogfood", "Upload unpublished build artifacts to the dogfood prefix for manual distribution")
+  .action(async () => {
+    await import("./storage/publish-dogfood.ts");
+  });
+
+cli
+  .command("publish-dsh-bootstrap", "Publish immutable DeepSeek Harness bootstrap installers")
+  .action(async () => {
+    await import("./storage/publish-dsh-bootstrap.ts");
+  });
+
+cli
+  .command("export-catalog", "Export product content into a catalog.json snapshot staging dir")
+  .action(async () => {
+    const { exportCatalogFromEnv } = await import("./catalog/export-catalog.ts");
+    await exportCatalogFromEnv();
+  });
+
+cli
+  .command("render-catalog-previews", "Render catalog preview webp images into the staging dir")
+  .action(async () => {
+    const { renderCatalogPreviewsFromEnv } = await import("./catalog/render-catalog-previews.ts");
+    await renderCatalogPreviewsFromEnv();
+  });
+
+cli
+  .command("pack-catalog", "Write checksums, provenance, and bundle.tar.zst for a catalog snapshot")
+  .action(async () => {
+    const { packCatalogFromEnv } = await import("./catalog/pack-catalog.ts");
+    await packCatalogFromEnv();
+  });
+
+cli
+  .command("publish-catalog", "Publish an immutable catalog snapshot and update latest.json")
+  .action(async () => {
+    const { publishCatalogFromEnv } = await import("./storage/publish-catalog.ts");
+    await publishCatalogFromEnv();
+  });
+
+cli
+  .command("prepare-release-note", "Discover and validate release note sources")
+  .action(async () => {
+    await import("./release-note/prepare.ts");
+  });
+
+cli
+  .command("publish-release-note", "Publish immutable release note content")
+  .action(async () => {
+    await import("./release-note/publish.ts");
+  });
+
+cli
+  .command("verify-release-note", "Verify a release note publication")
+  .action(async () => {
+    await import("./release-note/verify.ts");
+  });
+
+cli
   .command("publish-metadata", "Publish combined release metadata")
   .action(async () => {
     await import("./storage/publish-metadata.ts");
@@ -66,6 +116,13 @@ cli
   .command("verify-metadata", "Verify published release metadata")
   .action(async () => {
     await import("./storage/verify-metadata.ts");
+  });
+
+cli
+  .command("rollback-latest", "Repoint a channel's latest pointer at an already-published version")
+  .action(async () => {
+    const { rollbackLatestFromEnv } = await import("./storage/rollback-latest.ts");
+    await rollbackLatestFromEnv();
   });
 
 cli
